@@ -24,7 +24,7 @@ angular.module('bootstrapLightbox').run(['$templateCache', function($templateCac
   'use strict';
 
   $templateCache.put('lightbox.html',
-    "<div class=modal-body ng-swipe-left=Lightbox.nextImage() ng-swipe-right=Lightbox.prevImage()><div class=lightbox-nav><button class=close aria-hidden=true ng-click=$dismiss()>×</button><div class=btn-group ng-if=\"Lightbox.images.length > 1\"><a class=\"btn btn-xs btn-default\" ng-click=Lightbox.prevImage()>‹ Previous</a> <a ng-href={{Lightbox.imageUrl}} target=_blank class=\"btn btn-xs btn-default\" title=\"Open in new tab\">Open image in new tab</a> <a class=\"btn btn-xs btn-default\" ng-click=Lightbox.nextImage()>Next ›</a></div></div><div class=lightbox-image-container><div class=lightbox-image-caption><span>{{Lightbox.imageCaption}}</span></div><img ng-if=!Lightbox.isVideo(Lightbox.image) lightbox-src={{Lightbox.imageUrl}}><div ng-if=Lightbox.isVideo(Lightbox.image) class=\"embed-responsive embed-responsive-16by9\"><video ng-if=!Lightbox.isSharedVideo(Lightbox.image) lightbox-src={{Lightbox.imageUrl}} controls autoplay></video><embed-video ng-if=Lightbox.isSharedVideo(Lightbox.image) lightbox-src={{Lightbox.imageUrl}} ng-href={{Lightbox.imageUrl}} iframe-id=lightbox-video class=embed-responsive-item><a ng-href={{Lightbox.imageUrl}}>Watch video</a></embed-video></div></div></div>"
+    "<div class=modal-body ng-swipe-left=Lightbox.nextSwipe() ng-swipe-right=Lightbox.prevSwipe()><div class=lightbox-nav><button class=close aria-hidden=true ng-click=$dismiss()>×</button><div class=btn-group ng-if=\"Lightbox.images.length > 1\"><a class=\"btn btn-xs btn-default\" ng-click=Lightbox.prevImage()>‹ Previous</a> <a ng-href={{Lightbox.imageUrl}} target=_blank class=\"btn btn-xs btn-default\" title=\"Open in new tab\">Open image in new tab</a> <a class=\"btn btn-xs btn-default\" ng-click=Lightbox.nextImage()>Next ›</a></div></div><div class=lightbox-image-container><div class=lightbox-image-caption><span>{{Lightbox.imageCaption}}</span></div><img ng-if=Lightbox.isImage(Lightbox.image) lightbox-src={{Lightbox.imageUrl}}><div photosphere ng-if=Lightbox.isPhotoSphere(Lightbox.image) ps-src={{Lightbox.imageUrl}} ps-caption={{Lightbox.imageCaption}} ps-options=Lightbox.photoSphereOptions lightbox-src={{Lightbox.imageUrl}}></div><div ng-if=Lightbox.isVideo(Lightbox.image) class=\"embed-responsive embed-responsive-16by9\"><video ng-if=!Lightbox.isSharedVideo(Lightbox.image) lightbox-src={{Lightbox.imageUrl}} controls autoplay></video><embed-video ng-if=Lightbox.isSharedVideo(Lightbox.image) lightbox-src={{Lightbox.imageUrl}} ng-href={{Lightbox.imageUrl}} iframe-id=lightbox-video class=embed-responsive-item><a ng-href={{Lightbox.imageUrl}}>Watch video</a></embed-video></div></div></div>"
   );
 
 }]);
@@ -77,6 +77,12 @@ angular.module('bootstrapLightbox').service('ImageLoader', ['$q',
  * @memberOf  bootstrapLightbox
  */
 angular.module('bootstrapLightbox').provider('Lightbox', function () {
+  /**
+   * Object to configure PhotoSphere viewer
+   * @type {object}
+   */
+  this.photoSphereOptions = {};
+
   /**
    * Template URL passed into `$uibModal.open()`.
    * @type     {String}
@@ -196,6 +202,17 @@ angular.module('bootstrapLightbox').provider('Lightbox', function () {
 
   /**
    * @param    {*} image An element in the array of images.
+   * @return   {Boolean} Whether the provided element is a image.
+   * @type     {Function}
+   * @name     isImage
+   * @memberOf bootstrapLightbox.Lightbox
+   */
+  this.isImage = function (image) {
+    return !this.isVideo(image) && !this.isPhotoSphere(image);
+  };
+
+  /**
+   * @param    {*} image An element in the array of images.
    * @return   {Boolean} Whether the provided element is a video.
    * @type     {Function}
    * @name     isVideo
@@ -204,6 +221,21 @@ angular.module('bootstrapLightbox').provider('Lightbox', function () {
   this.isVideo = function (image) {
     if (typeof image === 'object' && image && image.type) {
       return image.type === 'video';
+    }
+
+    return false;
+  };
+
+  /**
+   * @param    {*} image An element in the array of images.
+   * @return   {Boolean} Whether the provided element is a photosphere image.
+   * @type     {Function}
+   * @name     isPhotoSphere
+   * @memberOf bootstrapLightbox.Lightbox
+   */
+  this.isPhotoSphere = function (image) {
+    if (typeof image === 'object' && image && image.type) {
+      return image.type === 'photosphere';
     }
 
     return false;
@@ -256,8 +288,10 @@ angular.module('bootstrapLightbox').provider('Lightbox', function () {
     Lightbox.getImageCaption = this.getImageCaption;
     Lightbox.calculateImageDimensionLimits = this.calculateImageDimensionLimits;
     Lightbox.calculateModalDimensions = this.calculateModalDimensions;
+    Lightbox.isImage = this.isImage;
     Lightbox.isVideo = this.isVideo;
     Lightbox.isSharedVideo = this.isSharedVideo;
+    Lightbox.isPhotoSphere = this.isPhotoSphere;
 
     /**
      * Whether keyboard navigation is currently enabled for navigating through
@@ -458,6 +492,32 @@ angular.module('bootstrapLightbox').provider('Lightbox', function () {
      */
     Lightbox.nextImage = function () {
       Lightbox.setImage((Lightbox.index + 1) % Lightbox.images.length);
+    };
+
+    /**
+     * Function triggered when user swipe to the right.
+     * Next image is triggered if current image is not a photosphere because user need to navigate in the sphere
+     * @type     {Function}
+     * @name     nextSwipe
+     * @memberOf bootstrapLightbox.Lightbox
+     */
+    Lightbox.nextSwipe = function () {
+      if(!Lightbox.isPhotoSphere(Lightbox.image)) {
+        Lightbox.nextImage();
+      }
+    };
+
+    /**
+     * Function triggered when user swipe to the left.
+     * Next image is triggered if current image is not a photosphere because user need to navigate in the sphere
+     * @type     {Function}
+     * @name     prevSwipe
+     * @memberOf bootstrapLightbox.Lightbox
+     */
+    Lightbox.prevSwipe = function () {
+      if(!Lightbox.isPhotoSphere(Lightbox.image)) {
+        Lightbox.prevImage();
+      }
     };
 
     /**
