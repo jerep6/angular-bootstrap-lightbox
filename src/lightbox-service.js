@@ -5,6 +5,12 @@
  */
 angular.module('bootstrapLightbox').provider('Lightbox', function () {
   /**
+   * Object to configure PhotoSphere viewer
+   * @type {object}
+   */
+  this.photoSphereOptions = {};
+
+  /**
    * Template URL passed into `$uibModal.open()`.
    * @type     {String}
    * @name     templateUrl
@@ -123,6 +129,17 @@ angular.module('bootstrapLightbox').provider('Lightbox', function () {
 
   /**
    * @param    {*} image An element in the array of images.
+   * @return   {Boolean} Whether the provided element is a image.
+   * @type     {Function}
+   * @name     isImage
+   * @memberOf bootstrapLightbox.Lightbox
+   */
+  this.isImage = function (image) {
+    return !this.isVideo(image) && !this.isPhotoSphere(image);
+  };
+
+  /**
+   * @param    {*} image An element in the array of images.
    * @return   {Boolean} Whether the provided element is a video.
    * @type     {Function}
    * @name     isVideo
@@ -131,6 +148,21 @@ angular.module('bootstrapLightbox').provider('Lightbox', function () {
   this.isVideo = function (image) {
     if (typeof image === 'object' && image && image.type) {
       return image.type === 'video';
+    }
+
+    return false;
+  };
+
+  /**
+   * @param    {*} image An element in the array of images.
+   * @return   {Boolean} Whether the provided element is a photosphere image.
+   * @type     {Function}
+   * @name     isPhotoSphere
+   * @memberOf bootstrapLightbox.Lightbox
+   */
+  this.isPhotoSphere = function (image) {
+    if (typeof image === 'object' && image && image.type) {
+      return image.type === 'photosphere';
     }
 
     return false;
@@ -183,8 +215,10 @@ angular.module('bootstrapLightbox').provider('Lightbox', function () {
     Lightbox.getImageCaption = this.getImageCaption;
     Lightbox.calculateImageDimensionLimits = this.calculateImageDimensionLimits;
     Lightbox.calculateModalDimensions = this.calculateModalDimensions;
+    Lightbox.isImage = this.isImage;
     Lightbox.isVideo = this.isVideo;
     Lightbox.isSharedVideo = this.isSharedVideo;
+    Lightbox.isPhotoSphere = this.isPhotoSphere;
 
     /**
      * Whether keyboard navigation is currently enabled for navigating through
@@ -385,6 +419,32 @@ angular.module('bootstrapLightbox').provider('Lightbox', function () {
      */
     Lightbox.nextImage = function () {
       Lightbox.setImage((Lightbox.index + 1) % Lightbox.images.length);
+    };
+
+    /**
+     * Function triggered when user swipe to the right.
+     * Next image is triggered if current image is not a photosphere because user need to navigate in the sphere
+     * @type     {Function}
+     * @name     nextSwipe
+     * @memberOf bootstrapLightbox.Lightbox
+     */
+    Lightbox.nextSwipe = function () {
+      if(!Lightbox.isPhotoSphere(Lightbox.image)) {
+        Lightbox.nextImage();
+      }
+    };
+
+    /**
+     * Function triggered when user swipe to the left.
+     * Next image is triggered if current image is not a photosphere because user need to navigate in the sphere
+     * @type     {Function}
+     * @name     prevSwipe
+     * @memberOf bootstrapLightbox.Lightbox
+     */
+    Lightbox.prevSwipe = function () {
+      if(!Lightbox.isPhotoSphere(Lightbox.image)) {
+        Lightbox.prevImage();
+      }
     };
 
     /**

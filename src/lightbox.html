@@ -1,6 +1,6 @@
 <div class="modal-body"
-    ng-swipe-left="Lightbox.nextImage()"
-    ng-swipe-right="Lightbox.prevImage()">
+    ng-swipe-left="Lightbox.nextSwipe()"
+    ng-swipe-right="Lightbox.prevSwipe()">
   <!-- navigation -->
   <div class="lightbox-nav">
     <!-- close button -->
@@ -29,8 +29,16 @@
     </div>
 
     <!-- image -->
-    <img ng-if="!Lightbox.isVideo(Lightbox.image)"
+    <img ng-if="Lightbox.isImage(Lightbox.image)"
         lightbox-src="{{Lightbox.imageUrl}}">
+
+    <!-- Image Photo Sphere -->
+    <div photosphere ng-if="Lightbox.isPhotoSphere(Lightbox.image)"
+              ps-src="{{Lightbox.imageUrl}}"
+              ps-caption="{{Lightbox.imageCaption}}"
+              ps-options="Lightbox.photoSphereOptions"
+              lightbox-src="{{Lightbox.imageUrl}}"
+    ></div>
 
     <!-- video -->
     <div ng-if="Lightbox.isVideo(Lightbox.image)"
